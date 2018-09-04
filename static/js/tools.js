@@ -90,4 +90,18 @@
         var r = window.location.search.substr(1).match(reg); 
         if (r != null) return unescape(r[2]); return null; 
     }
+
+
+    lsl.runOnce = function(fn, context){
+        var result;
+        return function(){
+            if(fn){
+                result = fn.apply(context || this, arguments);
+                fn = null;
+            }
+            return result;
+        }
+    }
+
+    
 })(window, document);

@@ -10,3 +10,5 @@ python练习代码，仅自己练习，不要参考
 
 python_ajax分支
 >>>>>>> origin/tmp
+
+2018-9-4新增mysql分页查询，尚有问题，待优化

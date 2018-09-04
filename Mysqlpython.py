@@ -51,5 +51,18 @@ class Mysqlp(object):
         finally:
             self.close()
 
-
-
+    def get_page(self, sql_select, sql_size, L1 = [], L2 = []):
+        self.open()
+        try:
+            self.cur.execute(sql_select, L1)
+            res = self.cur.fetchall()
+            self.cur.execute(sql_size, L2)
+            size = self.cur.fetchone()
+            self.conn.commit()
+            print('分页获取完毕')
+            return (size, res)
+        except Exception as e:
+            self.conn.rollback()
+            print('error ==> ', e)
+        finally:
+            self.close()

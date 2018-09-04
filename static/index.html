@@ -6,6 +6,27 @@
     <link rel="stylesheet" type="text/css" href="./css/reset.css" />
     <link rel="stylesheet" type="text/css" href="./css/index.css" />
     <link rel="stylesheet" type="text/css" href="./css/plugins.css" />
+    <style type="text/css">
+        .m-pagination{
+            margin-top: 16px;
+        }
+        .m-pagination .u-page-index{
+            display: inline-block;
+            margin-right: 4px;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            line-height: 30px;
+            background: #fff;
+            color: #333;
+        }
+        .m-pagination .u-page-index:hover,
+        .m-pagination .u-page-index.active{
+            background: #4B5682;
+            color: #fff;
+        }
+
+    </style>
 </head>
 <body>
 
@@ -27,7 +48,13 @@
                 <input type="button" value="查询" class="u-btn u-btn-search">
             </div>
             <div class="content">...</div>
-            
+            <div class="m-pagination">
+                <!-- <a class="u-page-index active" href="#pageNum=1">1</a>
+                <a class="u-page-index" href="#pageNum=2">2</a>
+                <a class="u-page-index" href="#pageNum=3">3</a>
+                <a class="u-page-index" href="#pageNum=4">4</a>
+                <a class="u-page-index" href="#pageNum=5">5</a> -->
+            </div>
         </div>
         <div class="u-welcome">
             welcome
@@ -50,6 +77,9 @@
 
             var plugins = new lsl.Plugins()
 
+            
+            
+            
 
             function tab(){
                 var el = document.querySelector('.m-tab'),
@@ -136,7 +166,8 @@
                 
             }
 
-            function search_hist(){
+
+            function search_hist(pageNum, isClick){
                 var username = lsl.getSessionstorage('username')
                 if(!username){
                     plugins.alert('用户登录信息丢失，请重新登录')
@@ -144,25 +175,42 @@
                     return
                 }
 
+                var pageNum = pageNum || 1;
+
+                if(location.hash && !isClick){
+                    var _array = location.hash.substring(1).split('=');
+                    if(_array[0] == 'pageNum'){
+                        pageNum = _array[1]    
+                    }
+                }
+
+                console.log('pageNum:', pageNum)
                 lsl.ajax({
                     url : "searchHist.rc", 
                     type : "POST",  
                     async : true,   
                     data : {
-                        name : username
+                        name : username,
+                        pageSize : 10,
+                        pageNum : pageNum
                     },
                     success : function(data){  
                         res = lsl.strToObj(data)
-                        console.log('searchHist.rc',data)
+                        // console.log('searchHist.rc',data)
                         if(res.code != 200){
                             plugins.alert(res.msg)
                             return
                         }
 
-                        data_list = eval('(' +res.data+ ')') 
-                
-                        g_dom.content.appendChild(createTable(data_list))
+                        data_obj = eval('(' +res.data+ ')'); 
 
+                        data_list = data_obj.data_list;
+                        data_pageSize = data_obj.pageSize;
+                        g_dom.content.innerHTML = '';
+                        g_dom.content.appendChild(createTable(data_list));
+
+                        
+                        pagination(data_pageSize, 10, pageNum);
                     }
                 })
             }
@@ -178,6 +226,44 @@
 
                 return el
             }
+
+            function pagination(total, size, currNum){
+                var el = document.querySelector('.m-pagination'),
+                    frag = document.createDocumentFragment(),
+                    len = Math.ceil(total / size),
+                    list_a = null;
+
+                el.innerHTML = '';
+
+                for(var i = 1; i <= len;i++){
+                    var ele = document.createElement('a');
+                    ele.className = 'u-page-index';
+                    if(i == currNum){
+                        ele.classList.add('active')
+                    }
+                    ele.setAttribute('href', '#pageNum=' + i);
+                    ele.innerHTML = i;
+                    frag.appendChild(ele)
+                }
+
+                el.appendChild(frag);
+                list_a = el.querySelectorAll('.u-page-index')
+
+
+                el.addEventListener('click', function(e){
+                    var target = e.target
+                    if(target.classList.contains('u-page-index')){
+                        for(var i = 0, len = list_a.length; i < len; i++){
+                            list_a[i].classList.remove('active')
+                        }
+                        target.classList.add('active')
+                        search_hist(target.innerHTML, true)
+                    }
+                },false)
+            }
+
+
+            
 
             function welcome_text(){
                 var time = new Date(),

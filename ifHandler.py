@@ -8,7 +8,9 @@ sql_list = {
     'put_user_default': 'insert into user(name) values(%s)',
     'search_word': 'select * from words where word=%s',
     'put_word_hist': 'insert into hist(name, word, date) values(%s, %s, %s)',
-    'get_word_hist': 'select word,date from hist where name=%s'
+    'get_word_hist': 'select word,date from hist where name=%s limit %s, %s',
+    'get_word_hist_size' : 'select count(id) from hist where name=%s',
+    'get_word_hist_2' : 'select (select count(id) from hist where name=%s) as total, word, date from hist where name=%s limit %s, %s'
 }
 
 
@@ -113,18 +115,30 @@ class InterferHandler(object):
     def do_search_hist(self, args):
         data_list = args.decode().split('&')
         name = data_list[0].split('=')[1]
+        pageSize = int(data_list[1].split('=')[1])
+        pageNum = data_list[2].split('=')[1]
 
-        sql_select = self.sql_list['get_word_hist']
-        try:
-            data = self.sqlh.all(sql_select, [name])
+        
+        startPageNum = (int(pageNum) - 1) * 10
+        print(startPageNum, pageSize)
+
+        sql_select = self.sql_list['get_word_hist_2']
+
+        try:   
+            res = self.sqlh.all(sql_select, [name, name, startPageNum, pageSize])
         except Exception as e:
-            print('error-->', e)
+            print('ifHandler error-->', e)
             return '{"code":505, "data":{}, "msg":"服务器异常，请稍后重试"}'
         else:
+            res_dict = {}
             res_data = []
-            for word, date in data:
+
+            res_dict['pageSize'] = res[0][0]
+            for total, word, date in res:
                 curr_obj = {}
                 curr_obj["word"] = word
                 curr_obj["t"] = date
                 res_data.append(curr_obj)
-            return '{"code":200, "data":"%s", "msg":"OK"}' % str(res_data)
+            res_dict['data_list'] = res_data
+            # print(res_dict)
+            return '{"code":200, "data":"%s", "msg":"OK"}' % str(res_dict)

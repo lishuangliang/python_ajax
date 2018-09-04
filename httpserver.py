@@ -39,7 +39,10 @@ class HTTPServer(object):
         print(request)
         print('--------------')
 
-        request_header = request[0].decode('utf-8')
+        try:
+            request_header = request[0].decode('utf-8')
+        except:
+            sys.exit('thread退出')
 
         # print(request_header)
         pattern = r'(?P<METHOD>[A-Z]+)\s+(?P<PATH>\/\S*)'
